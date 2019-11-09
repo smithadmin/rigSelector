@@ -8,7 +8,7 @@ The program is intended to be run as a CGI.  It generates the HTML for the user'
 
 For the critics, if this looks like it needs a lot of work, y0u're not wrong.  I am learning Python as I go, and this is my first "real" project that I am working on in the public eye.  (I had one other, but that was more-or-less specific to work I do.)
 
-My To Do List:
-    * Add the backend DB functionality
-    * Upload updated script, CSS, and functional DB
+My To Do List:<br/>
+    * Add the backend DB functionality<br/>
+    * Upload updated script, CSS, and functional DB<br/>
     * Add Installation instructions
