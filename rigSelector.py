@@ -1,13 +1,21 @@
 #!/usr/local/bin/python3.6
 
 """
-    Author: William Smith
+   Author: William Smith
 
    This is a work in progress.
+   
+   This program should aid the User in narrowing down their choices to a handful
+   of radios ("rigs") that meet their needs.
+
+   History:
+      0.2 - Added DB bits and cleaned up a few things
+      0.1 - Initial release uploaded to GitHub
 """
 
 import cgi
 import cgitb; cgitb.enable()
+import sqlite3
 
 def print_header():
    """
@@ -18,7 +26,9 @@ def print_header():
    print('<html><head><title>rigSelector</title><link rel="stylesheet" href="split2.css"></head><body>')
    print('<div class="wrapper">')
    print('<h1>rigSelector (demo)</h1>')
-   print('<header>Let\'s see what we can do to help you on your search for your next rig!</header>')
+   print('<header>&nbsp;Let\'s see what we can do to help you on your search for your next rig!<br/>')
+   print('&nbsp;The purpose here is to help provide a list of equipment that may satisfy your needs.<br>')
+   print('This is not intended to be an inclusive list, nor is it supposed to be the end of your search.</header>')
 
 def print_footer():
    """
@@ -27,7 +37,7 @@ def print_footer():
    print('</div>')
    print('</body></html>')
 
-def show_criteria(f):
+def show_criteria(f, ffList, brList, diList):
    """
       This section should show everything we can choose from.  As the choices are made,
       the page should update the Results.  If this proves to take too long, maybe shift to
@@ -38,69 +48,69 @@ def show_criteria(f):
    """
    print('<criteria>')
    print('<form action="rigSelectorDemo.py" method="POST">')
-   print('Form Factor:<br/>')
-   for ff in ['HT', 'Mobile', 'Base']:
-      tmp = '<input type="checkbox" name="' + ff + '" '
-      if f.getvalue(ff):
+   print('&nbsp;Form Factor:<br/>')
+   for ff in ffList:
+      tmp = '&nbsp;<input type="checkbox" name="' + ff[1] + '" '
+      if f.getvalue(ff[1]):
          tmp += 'checked'
-      tmp = tmp + '/> ' + ff
+      tmp = tmp + '/> ' + ff[1]
       print(tmp)
    print('<br/><br/>')
 
-   print('Brand:<br/>')
-   for br in ['Anytone', 'Icom', 'Kenwood', 'Yaesu']:
-      tmp = '<input type="checkbox" name="' + br + '" '
-      if f.getvalue(br):
+   print('&nbsp;Brand:<br/>')
+   for br in brList:
+      tmp = '&nbsp;<input type="checkbox" name="' + br[1] + '" '
+      if f.getvalue(br[1]):
          tmp += 'checked'
-      tmp = tmp + '/> ' + br
+      tmp = tmp + '/> ' + br[1]
       print(tmp)
    print('<br/><br/>')
 
-   print('Digital Mode:<br/>')
-   for br in ['DMR', 'DStar', 'YSF']:
-      tmp = '<input type="checkbox" name="' + br + '" '
-      if f.getvalue(br):
+   print('&nbsp;Digital Mode:<br/>')
+   for di in diList:
+      tmp = '&nbsp;<input type="checkbox" name="' + di[1] + '" '
+      if f.getvalue(di[1]):
          tmp += 'checked'
-      tmp = tmp + '/> ' + br
+      tmp = tmp + '/> ' + di[1]
       print(tmp)
    print('<br/><br/>')
 
    # Until we can do this on-click...
    print('<br/><br/>')
-   print('<input type="submit" value="Find my options!" />')
+   print('&nbsp;<input type="submit" value="Find my options!" />')
    print('</form>')
    print('</criteria>')
 
 
-def buildQuery(f):
+def buildQuery(f, ffList, brList, diList):
    """
       This should parse any selected options and build a query to work with.
    """
    formFactor = ""
-   ffList = ['HT', 'Mobile', 'Base']
+
    for ff in ffList:
-      if f.getvalue(ff):
+      if f.getvalue(ff[1]):
          if len(formFactor) > 0:
             formFactor += ' OR '
-         formFactor += "form = '" + ff + "'"
+         formFactor += "shape = '" + ff[1] + "'"
 
    brand = ""
-   brList = ['Anytone', 'Icom', 'Kenwood', 'Yaesu']
+
    for br in brList:
-      if f.getvalue(br):
+      if f.getvalue(br[1]):
          if len(brand) > 0:
             brand += ' OR '
-         brand += "brand = '" + br + "'"
+         brand += "brand = '" + br[1] + "'"
    
    digital = ""
-   diList = ['DMR', 'DStar', 'YSF']
+   
    for di in diList:
-      if f.getvalue(di):
+      if f.getvalue(di[1]):
          if len(digital) > 0:
             digital += ' OR '
-         digital += "digital = '" + di + "'"
+         digital += "mode = '" + di[1] + "'"
    
-   q = "SELECT * from database"
+   q = "SELECT model, brand, shape, mode, msrp, vlink, slink from rigs"
    if (len(formFactor) > 0) or (len(brand) > 0):
       q += " WHERE "
    if len(formFactor) > 0:
@@ -117,14 +127,51 @@ def buildQuery(f):
    return q
 
 
-def show_results(q):
+def runQuery(q):
+   """
+      This is a generic function that takes the query, executes it, and returns the value set
+   """
+
+   # First, trap an errant DB failure:
+   try:
+      con = sqlite3.connect('rigSelector.sqlite3')
+   except:
+      print('CRITICAL: Could not connect to Database!')
+
+   # Now we collect information based on the query.
+   cur = con.cursor()
+   cur.execute(q)
+   qResult = cur.fetchall()
+
+   # Now close the DB so we don't break anything.
+   # We don't need commit() because this program SHOULD be read-only...
+   if con:
+      con.close()
+
+   return qResult
+ 
+
+def show_results(res):
    """
       This section should show the results of the search, given the criteria.
    """
+
+   resLen = len(res)
+
+   # From this point, we need to make everything look pretty for the screen.
    print('<results>')
-   print('Imagine a pretty nifty list of devices here with links and all that.<br/><br/>')
-   print('Query: {}<br/>Length: {}'.format(q, len(q)))
+   print('&nbsp;Imagine a pretty nifty list of devices here with links and all that.<br/>&nbsp;Here is what we know based on our current database:<br/><br/>')
+   #print('Result Length: {}'.format(resLen))
+   if resLen > 0:
+      print('<table><tr><th>Model</th><th>Brand</th><th>Form</th><th>Digital<br/>Modes</th><th>MSRP</th><th>Vendor</th><th>Shop</th></tr>')
+      for rig in res:
+         model, brand, form, mode, msrp, vlink, slink = rig[0], rig[1], rig[2], rig[3], rig[4], rig[5], rig[6]
+         print(f"<tr><td>&nbsp;{model}&nbsp;</td><td>&nbsp;{brand}&nbsp;</td><td>&nbsp;{form}&nbsp;</td><td>&nbsp;{mode}&nbsp;</td><td>&nbsp;${msrp}&nbsp;</td><td>&nbsp;<a href='{vlink}'>Link</a>&nbsp;</td><td>&nbsp;<a href='{slink}'>Link</a>&nbsp;</td>")
+      print('</table>')
+   else:
+      print('<br/>There were no devices matching the criteria selected.')
    print('</results>')
+
 
 """
    Everything below here is the Main Routine.
@@ -133,11 +180,14 @@ print_header()
 
 form = cgi.FieldStorage()
 
-show_criteria(form)
+fList = runQuery('SELECT * FROM phyForm')
+dList = runQuery('SELECT * FROM digMode')
+bList = runQuery('SELECT * FROM brand')
 
-query = buildQuery(form)
+show_criteria(form, fList, dList, bList)
 
-show_results(query)
+query = buildQuery(form, fList, bList, dList)
+result = runQuery(query)
+show_results(result)
 
 print_footer()
-
