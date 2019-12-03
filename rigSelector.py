@@ -4,11 +4,9 @@
    Author: William Smith
 
    This is a work in progress.
-   
-   This program should aid the User in narrowing down their choices to a handful
-   of radios ("rigs") that meet their needs.
 
    History:
+      0.3 - Normalized DB and updated queries to match
       0.2 - Added DB bits and cleaned up a few things
       0.1 - Initial release uploaded to GitHub
 """
@@ -37,7 +35,7 @@ def print_footer():
    print('</div>')
    print('</body></html>')
 
-def show_criteria(f, ffList, brList, diList):
+def show_criteria(f, ffList, brList, diList,opList):
    """
       This section should show everything we can choose from.  As the choices are made,
       the page should update the Results.  If this proves to take too long, maybe shift to
@@ -47,7 +45,7 @@ def show_criteria(f, ffList, brList, diList):
       query, so they won't need to be hard-coded as they are now.
    """
    print('<criteria>')
-   print('<form action="rigSelectorDemo.py" method="POST">')
+   print('<form action="rigSelector.py" method="POST">')
    print('&nbsp;Form Factor:<br/>')
    for ff in ffList:
       tmp = '&nbsp;<input type="checkbox" name="' + ff[1] + '" '
@@ -75,14 +73,25 @@ def show_criteria(f, ffList, brList, diList):
       print(tmp)
    print('<br/><br/>')
 
+   print('&nbsp;Options:&nbsp;[not active]<br/>')
+   for op in opList:
+      tmp = '&nbsp;<input type="checkbox" name="' + op[1] + '" '
+      if f.getvalue(op[1]):
+         tmp += 'checked'
+      tmp = tmp + '/> ' + op[1]
+      print(tmp)
+   print('<br/><br/>')
+
    # Until we can do this on-click...
    print('<br/><br/>')
    print('&nbsp;<input type="submit" value="Find my options!" />')
+   # The Reset button only works until a Submission has been made.  After that....
+   print('&nbsp;<input type=reset>')
    print('</form>')
    print('</criteria>')
 
 
-def buildQuery(f, ffList, brList, diList):
+def buildQuery(f, ffList, brList, diList, opList):
    """
       This should parse any selected options and build a query to work with.
    """
@@ -92,7 +101,7 @@ def buildQuery(f, ffList, brList, diList):
       if f.getvalue(ff[1]):
          if len(formFactor) > 0:
             formFactor += ' OR '
-         formFactor += "shape = '" + ff[1] + "'"
+         formFactor += "p.shape = '" + ff[1] + "'"
 
    brand = ""
 
@@ -100,7 +109,7 @@ def buildQuery(f, ffList, brList, diList):
       if f.getvalue(br[1]):
          if len(brand) > 0:
             brand += ' OR '
-         brand += "brand = '" + br[1] + "'"
+         brand += "b.brandName = '" + br[1] + "'"
    
    digital = ""
    
@@ -108,22 +117,38 @@ def buildQuery(f, ffList, brList, diList):
       if f.getvalue(di[1]):
          if len(digital) > 0:
             digital += ' OR '
-         digital += "mode = '" + di[1] + "'"
+         digital += "d.mode = '" + di[1] + "'"
    
-   q = "SELECT model, brand, shape, mode, msrp, vlink, slink from rigs"
-   if (len(formFactor) > 0) or (len(brand) > 0):
-      q += " WHERE "
-   if len(formFactor) > 0:
-      q += "(" + formFactor + ")"
-   if len(brand) > 0:
-      if len(formFactor) > 0:
-         q += " AND "
-      q += "(" + brand + ")"
-   if len(digital) > 0:
-      if (len(formFactor) > 0) or (len(brand) > 0):
-         q += " AND "
-      q += "(" + digital + ")"
+   options = ""
+   
+   for op in opList:
+      if f.getvalue(op[1]):
+         if len(options) > 0:
+            options += ' OR '
+         options += "option = '" + op[1] + "'"
 
+   
+   q = "SELECT r.model, b.brandName, p.shape, d.mode, r.msrp, r.vlink FROM rigs r, phyForm p, brand b, digMode d"
+   q += " WHERE (r.brand = b.brandKey) AND (r.shape = p.phyKey) AND (r.mode = d.digKey)"
+
+   # If there are any criteria chosen, prepare to add to the query
+   suffix = ""
+   if len(formFactor) > 0:
+      suffix += " AND (" + formFactor + ")"
+   if len(brand) > 0:
+      suffix += " AND (" + brand + ")"
+   if len(digital) > 0:
+      suffix += " AND (" + digital + ")"
+
+   # Commecnted this part out for now, not sure how to work it in just yet.
+   #if len(options) > 0:
+   #   if len(suffix) > 0:
+   #      suffix += " AND "
+   #   suffix += "(" + options + ")"
+
+   # Now add any details to the query
+   q += suffix
+   ###print('*** Query as built: {}'.format(q))
    return q
 
 
@@ -151,22 +176,24 @@ def runQuery(q):
    return qResult
  
 
-def show_results(res):
+def show_results(qry):
    """
       This section should show the results of the search, given the criteria.
    """
 
-   resLen = len(res)
+   result = runQuery(qry)
+   resLen = len(result)
 
    # From this point, we need to make everything look pretty for the screen.
    print('<results>')
    print('&nbsp;Imagine a pretty nifty list of devices here with links and all that.<br/>&nbsp;Here is what we know based on our current database:<br/><br/>')
-   #print('Result Length: {}'.format(resLen))
+   ###print('Query as received: {}\n'.format(qry))
+   ###print('Result Length: {}\n'.format(resLen))
    if resLen > 0:
-      print('<table><tr><th>Model</th><th>Brand</th><th>Form</th><th>Digital<br/>Modes</th><th>MSRP</th><th>Vendor</th><th>Shop</th></tr>')
-      for rig in res:
-         model, brand, form, mode, msrp, vlink, slink = rig[0], rig[1], rig[2], rig[3], rig[4], rig[5], rig[6]
-         print(f"<tr><td>&nbsp;{model}&nbsp;</td><td>&nbsp;{brand}&nbsp;</td><td>&nbsp;{form}&nbsp;</td><td>&nbsp;{mode}&nbsp;</td><td>&nbsp;${msrp}&nbsp;</td><td>&nbsp;<a href='{vlink}'>Link</a>&nbsp;</td><td>&nbsp;<a href='{slink}'>Link</a>&nbsp;</td>")
+      print('<table><tr><th>Brand</th><th>Model</th><th>Form</th><th>Digital<br/>Modes</th><th>MSRP</th><th>Vendor</th></tr>')
+      for rig in result:
+         model, brand, form, mode, msrp, vlink = rig[0], rig[1], rig[2], rig[3], rig[4], rig[5]
+         print(f"<tr><td>&nbsp;{brand}&nbsp;</td><td>&nbsp;{model}&nbsp;</td><td>&nbsp;{form}&nbsp;</td><td>&nbsp;{mode}&nbsp;</td><td>&nbsp;${msrp}&nbsp;</td><td>&nbsp;<a href='{vlink}'>Link</a>&nbsp;</td></tr>")
       print('</table>')
    else:
       print('<br/>There were no devices matching the criteria selected.')
@@ -183,11 +210,12 @@ form = cgi.FieldStorage()
 fList = runQuery('SELECT * FROM phyForm')
 dList = runQuery('SELECT * FROM digMode')
 bList = runQuery('SELECT * FROM brand')
+oList = runQuery('SELECT * FROM options')
 
-show_criteria(form, fList, dList, bList)
+show_criteria(form, fList, bList, dList, oList)
 
-query = buildQuery(form, fList, bList, dList)
-result = runQuery(query)
-show_results(result)
+query = buildQuery(form, fList, bList, dList, oList)
+show_results(query)
 
 print_footer()
+

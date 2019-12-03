@@ -1,0 +1,64 @@
+/* Original CSS by Nick Petit, modified by me as needed. */
+/* Source: https://codepen.io/nickpettit/pen/AyaGb */
+
+/**************************************
+STATIC LAYOUT CSS
+**************************************/
+
+.wrapper {
+  width: 90%;
+  margin: 0 auto;
+}
+
+header {
+  width: 100%;
+}
+
+criteria, results {
+  float: left;
+}
+
+criteria {
+  width: 34%;
+  margin-right: 1%;
+}
+
+results {
+  width: 65%;
+}
+
+
+
+/**************************************
+CSS TO MAKE THE EXAMPLE LOOK PRETTY
+**************************************/
+
+*, *:before, *:after {
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+}
+
+body {
+  background: #FAEBD7;       /* Antique White */
+  color: DarkSlateGray;      /*#2F4F4F */
+  font-family: Helvetica;
+  text-align: left;
+  margin: 0;
+}
+
+header,
+criteria,
+results {
+  border: 1px solid rgba(250,235,215,0.8);
+  margin-bottom: 10px;
+  border-radius: 3px;
+}
+
+header {
+  padding: 20px 0;
+}
+
+criteria, results {
+  padding: 200px 0;
+}
