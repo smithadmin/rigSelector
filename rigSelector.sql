@@ -43,12 +43,23 @@ BEGIN TRANSACTION;
 DROP TABLE IF EXISTS 'options';
 CREATE TABLE 'options' (
    "optKey" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+   "rigndx" INTEGER NOT NULL,
    "options" NVARCHAR(15) NOT NULL
 );
-INSERT INTO 'options' VALUES (1,'APRS');
-INSERT INTO 'options' VALUES (2,'Bluetooth');
-INSERT INTO 'options' VALUES (3,'GPS');
-INSERT INTO 'options' VALUES (4,'Radio Receiver');
+/* rigndx corresponds to rigs.rigNDX  */
+/* a zero value is for menu           */
+INSERT INTO 'options' VALUES (1,0,'APRS');
+INSERT INTO 'options' VALUES (2,0,'Bluetooth');
+INSERT INTO 'options' VALUES (3,0,'GPS');
+INSERT INTO 'options' VALUES (4,0,'Radio Receiver');
+INSERT INTO 'options' VALUES (5,0,'Full Duplex');
+INSERT INTO 'options' VALUES (6,0,'Snapshot');
+INSERT INTO 'options' VALUES (7,7,'APRS');
+INSERT INTO 'options' VALUES (8,7,'Bluetooth');
+INSERT INTO 'options' VALUES (9,7,'GPS');
+INSERT INTO 'options' VALUES (10,6,'APRS');
+INSERT INTO 'options' VALUES (11,6,'GPS');
+INSERT INTO 'options' VALUES (12,6,'Snapshot');
 COMMIT;
 
 BEGIN TRANSACTION;
