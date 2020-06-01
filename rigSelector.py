@@ -140,7 +140,7 @@ def buildQuery(f, ffList, brList, diList, opList):
    if len(digital) > 0:
       suffix += " AND (" + digital + ")"
 
-   # Commecnted this part out for now, not sure how to work it in just yet.
+   # Commented this part out for now, not sure how to work it in just yet.
    #if len(options) > 0:
    #   if len(suffix) > 0:
    #      suffix += " AND "
