@@ -15,7 +15,7 @@ import cgi
 import cgitb; cgitb.enable()
 import sqlite3
 
-DEBUGGING = True
+DEBUGGING = False
 
 def print_header():
    """
