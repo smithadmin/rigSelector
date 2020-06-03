@@ -131,7 +131,7 @@ def buildQuery(f, ffList, brList, diList, opList):
 
    
    q = "SELECT r.model, r.brand, p.shape, d.mode, r.msrp, r.vlink FROM rigs r, phyForm p, brand b, digMode d"
-   q += " WHERE (r.shape = p.phyKey) AND (r.mode = d.digKey) GROUP BY 1"
+   q += " WHERE (r.shape = p.phyKey) AND (r.mode = d.digKey)"
 
    # If there are any criteria chosen, prepare to add to the query
    suffix = ""
@@ -148,8 +148,10 @@ def buildQuery(f, ffList, brList, diList, opList):
    #      suffix += " AND "
    #   suffix += "(" + options + ")"
 
+   suffix += " GROUP BY 1"
+
    # Now add any details to the query
-   q += suffix
+   q += suffix 
    if DEBUGGING:
       print('*** Query as built: {}'.format(q))
    return q
