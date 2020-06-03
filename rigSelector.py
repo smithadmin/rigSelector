@@ -15,6 +15,8 @@ import cgi
 import cgitb; cgitb.enable()
 import sqlite3
 
+DEBUGGING = True
+
 def print_header():
    """
       This section prints everything for the Header, up to (and including) the Header class.
@@ -128,8 +130,8 @@ def buildQuery(f, ffList, brList, diList, opList):
          options += "option = '" + op[1] + "'"
 
    
-   q = "SELECT r.model, b.brandName, p.shape, d.mode, r.msrp, r.vlink FROM rigs r, phyForm p, brand b, digMode d"
-   q += " WHERE (r.brand = b.brandKey) AND (r.shape = p.phyKey) AND (r.mode = d.digKey)"
+   q = "SELECT r.model, r.brand, p.shape, d.mode, r.msrp, r.vlink FROM rigs r, phyForm p, brand b, digMode d"
+   q += " WHERE (r.shape = p.phyKey) AND (r.mode = d.digKey)"
 
    # If there are any criteria chosen, prepare to add to the query
    suffix = ""
@@ -148,7 +150,8 @@ def buildQuery(f, ffList, brList, diList, opList):
 
    # Now add any details to the query
    q += suffix
-   ###print('*** Query as built: {}'.format(q))
+   if DEBUGGING:
+      print('*** Query as built: {}'.format(q))
    return q
 
 
@@ -187,8 +190,9 @@ def show_results(qry):
    # From this point, we need to make everything look pretty for the screen.
    print('<results>')
    print('&nbsp;Imagine a pretty nifty list of devices here with links and all that.<br/>&nbsp;Here is what we know based on our current database:<br/><br/>')
-   ###print('Query as received: {}\n'.format(qry))
-   ###print('Result Length: {}\n'.format(resLen))
+   if DEBUGGING:
+      print('Query as received: {}\n'.format(qry))
+      print('Result Length: {}\n'.format(resLen))
    if resLen > 0:
       print('<table><tr><th>Brand</th><th>Model</th><th>Form</th><th>Digital<br/>Modes</th><th>MSRP</th><th>Vendor</th></tr>')
       for rig in result:
@@ -210,7 +214,7 @@ form = cgi.FieldStorage()
 fList = runQuery('SELECT * FROM phyForm')
 dList = runQuery('SELECT * FROM digMode')
 bList = runQuery('SELECT * FROM brand')
-oList = runQuery('SELECT * FROM options')
+oList = runQuery('SELECT optKey, option FROM options WHERE rigndx = "0"')
 
 show_criteria(form, fList, bList, dList, oList)
 
